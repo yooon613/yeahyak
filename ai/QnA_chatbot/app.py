@@ -1,10 +1,10 @@
 # yeahyak/ai/QnA_chatbot/app.py
 from flask import Flask, request, jsonify
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from chatbot_agent import create_chatbot_agent
 
-load_dotenv()
+#load_dotenv()
 
 app = Flask(__name__)
 
