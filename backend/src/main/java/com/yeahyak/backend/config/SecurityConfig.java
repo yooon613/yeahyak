@@ -35,12 +35,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll() // 조회 모두 허용 - 추가자 최진호
-                        .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("ADMIN")  // 등록 관리자만 - 추가자 최진호
-                        .requestMatchers(HttpMethod.DELETE, "/api/announcements/**").hasRole("ADMIN")  // 삭제 관리자만 - 추가자 최진호
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                        .requestMatchers("/**").permitAll()  // 테스트 용으로 전체 허용
+                        .anyRequest().permitAll()            
+//                        .requestMatchers("/api/auth/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll() // 조회 모두 허용 - 추가자 최진호
+//                        .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("ADMIN")  // 등록 관리자만 - 추가자 최진호
+//                        .requestMatchers(HttpMethod.DELETE, "/api/announcements/**").hasRole("ADMIN")  // 삭제 관리자만 - 추가자 최진호
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+//                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
