@@ -1,6 +1,5 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Card, Form, Input, message, Row, Typography } from 'antd';
-import axios from 'axios';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../stores/authStore';
@@ -13,11 +12,6 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
 
   useEffect(() => {
-    axios
-      .get('http://localhost:8080/api/announcements')
-      .then((res) => console.log('성공!', res.data))
-      .catch((err) => console.error('에러!', err));
-
     if (isAuthenticated) {
       navigate('/branch', { replace: true });
     }
