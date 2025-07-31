@@ -116,7 +116,7 @@ export interface PharmacyStock {
   productId: number;
   quantity: number;
   lastInboundedAt?: string;
-  lastOutboundeAt?: string;
+  lastOutboundedAt?: string;
 }
 
 export interface PharmcayStockTransaction {
