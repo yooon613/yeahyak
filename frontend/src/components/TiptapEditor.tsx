@@ -1,19 +1,23 @@
-import { ImageUploadNode } from '@/components/tiptap-node/image-upload-node/image-upload-node-extension';
-import { Toolbar, ToolbarGroup, ToolbarSeparator } from '@/components/tiptap-ui-primitive/toolbar';
-import { HeadingDropdownMenu } from '@/components/tiptap-ui/heading-dropdown-menu';
-import { ImageUploadButton } from '@/components/tiptap-ui/image-upload-button';
-import { LinkPopover } from '@/components/tiptap-ui/link-popover';
-import { ListDropdownMenu } from '@/components/tiptap-ui/list-dropdown-menu';
-import { MarkButton } from '@/components/tiptap-ui/mark-button';
-import { TextAlignButton } from '@/components/tiptap-ui/text-align-button';
-import { UndoRedoButton } from '@/components/tiptap-ui/undo-redo-button';
-import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils';
+import { ImageUploadNode } from '@/tiptap/components/tiptap-node/image-upload-node';
+import { Spacer } from '@/tiptap/components/tiptap-ui-primitive/spacer';
+import {
+  Toolbar,
+  ToolbarGroup,
+  ToolbarSeparator,
+} from '@/tiptap/components/tiptap-ui-primitive/toolbar';
+import { HeadingDropdownMenu } from '@/tiptap/components/tiptap-ui/heading-dropdown-menu';
+import { ImageUploadButton } from '@/tiptap/components/tiptap-ui/image-upload-button';
+import { LinkPopover } from '@/tiptap/components/tiptap-ui/link-popover';
+import { ListDropdownMenu } from '@/tiptap/components/tiptap-ui/list-dropdown-menu';
+import { MarkButton } from '@/tiptap/components/tiptap-ui/mark-button';
+import { TextAlignButton } from '@/tiptap/components/tiptap-ui/text-align-button';
+import { UndoRedoButton } from '@/tiptap/components/tiptap-ui/undo-redo-button';
+import { handleImageUpload, MAX_FILE_SIZE } from '@/tiptap/lib/tiptap-utils';
 import { Image } from '@tiptap/extension-image';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { useEffect } from 'react';
-import { Spacer } from './tiptap-ui-primitive/spacer';
 import './TipTapEditor.scss';
 
 const TiptapToolbarContent = () => {
