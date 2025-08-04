@@ -15,8 +15,8 @@ import {
 } from '@ant-design/icons';
 import { ConfigProvider, Dropdown, Flex, Layout, Menu, message, Typography } from 'antd';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import type { Admin } from '../mocks/types';
 import { useAuthStore } from '../stores/authStore';
+import type { Admin } from '../types/admin';
 
 const { Sider, Header, Content, Footer } = Layout;
 

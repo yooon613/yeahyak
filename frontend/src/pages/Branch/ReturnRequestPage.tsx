@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import {
   Button,
   Card,
@@ -10,11 +9,12 @@ import {
   Row,
   Select,
   Table,
-  Typography,
   Tag,
+  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useState } from 'react';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -152,7 +152,9 @@ export default function ReturnRequestPage() {
     {
       title: '관리',
       render: (_, record) => (
-        <Button danger onClick={() => handleRemoveItem(record.key)}>삭제</Button>
+        <Button danger onClick={() => handleRemoveItem(record.key)}>
+          삭제
+        </Button>
       ),
     },
   ];
@@ -207,7 +209,9 @@ export default function ReturnRequestPage() {
                 disabled={!productList.length}
               >
                 {productList.map((p) => (
-                  <Option key={p.code} value={p.code}>{p.name}</Option>
+                  <Option key={p.code} value={p.code}>
+                    {p.name}
+                  </Option>
                 ))}
               </Select>
             </Form.Item>
@@ -223,7 +227,10 @@ export default function ReturnRequestPage() {
           </Col>
           <Col span={4}>
             <Form.Item label="단가">
-              <Input disabled value={selectedProduct?.price ? `${selectedProduct.price.toLocaleString()}원` : ''} />
+              <Input
+                disabled
+                value={selectedProduct?.price ? `${selectedProduct.price.toLocaleString()}원` : ''}
+              />
             </Form.Item>
           </Col>
           <Col span={6}>
@@ -259,7 +266,12 @@ export default function ReturnRequestPage() {
         <Table columns={historyColumns} dataSource={returnHistory} pagination={false} />
       </Card>
 
-      <Modal title="주문번호 선택" open={modalVisible} onCancel={() => setModalVisible(false)} footer={null}>
+      <Modal
+        title="주문번호 선택"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={null}
+      >
         {dummyOrders.map((order) => (
           <Card
             key={order.orderNumber}
@@ -267,8 +279,12 @@ export default function ReturnRequestPage() {
             onClick={() => handleOrderSelect(order)}
             style={{ marginBottom: 16 }}
           >
-            <p><strong>주문번호:</strong> {order.orderNumber}</p>
-            <p><strong>주문일자:</strong> {order.date}</p>
+            <p>
+              <strong>주문번호:</strong> {order.orderNumber}
+            </p>
+            <p>
+              <strong>주문일자:</strong> {order.date}
+            </p>
           </Card>
         ))}
       </Modal>

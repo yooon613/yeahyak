@@ -1,30 +1,30 @@
 // 필요한 React Hooks 및 antd 컴포넌트들을 가져옵니다.
-import React, { useState, useMemo } from 'react';
 import {
   Button,
-  DatePicker,
-  Row,
-  Col,
-  Table,
-  Layout,
-  Typography,
-  Space,
-  Form,
-  Modal,
-  Descriptions,
   Cascader,
+  Col,
+  DatePicker,
+  Descriptions,
+  Form,
+  Layout,
+  Modal,
+  Row,
+  Space,
+  Table,
   Tag,
+  Typography,
 } from 'antd';
+import React, { useMemo, useState } from 'react';
 // antd에서 필요한 타입들을 가져옵니다.
-import type { TableColumnsType, TableProps, CascaderProps, GetProp } from 'antd';
+import type { CascaderProps, GetProp, TableColumnsType, TableProps } from 'antd';
 
 // 목(mock) 데이터를 가져옵니다.
-import { mockOrders, mockOrderItems } from '../../mocks/order.mock';
-import { mockPharmacies } from '../../mocks/auth.mock';
+import { mockOrderItems, mockOrders } from '../../mocks/order.mock';
 import { mockProducts } from '../../mocks/product.mock';
 
 // 데이터 타입을 정의한 파일에서 타입들을 가져옵니다.
-import type { Order, OrderItem, Pharmacy, Product } from '../../mocks/types';
+import { mockPharmacies } from '../../mocks/pharmacy.mock';
+import type { Order, Pharmacy, Product } from '../../mocks/types';
 
 const { Content } = Layout; // Layout에서 Content 컴포넌트를 사용합니다.
 const { Text } = Typography; // Typography에서 Text 컴포넌트를 사용합니다.
@@ -147,7 +147,7 @@ export default function OrderManagementPage() {
         : order;
 
     const newOrders = orders.map(updateOrder);
-    const newFilteredOrders = filteredOrders.map(updateOrder);   
+    const newFilteredOrders = filteredOrders.map(updateOrder);
 
     setOrders(newOrders); // 전체 주문 목록을 업데이트합니다.
     setFilteredOrders(newFilteredOrders); // 필터링된 주문 목록도 업데이트합니다.
@@ -258,23 +258,22 @@ export default function OrderManagementPage() {
             승인
           </Button>
         ) : (
-          getStatusTag(status)  // 상태를 태그로 표시
+          getStatusTag(status) // 상태를 태그로 표시
         ),
     },
   ];
 
   // 선택된 주문의 상세 품목 정보를 계산합니다. (useMemo로 성능 최적화)
   const selectedOrderItems = useMemo(() => {
-    
     if (!selectedOrder) return [];
-    const productMap = new Map<number, Product>(mockProducts.map((p) => [p.id, p]));  // 제품 ID를 키로 하는 Map 생성
+    const productMap = new Map<number, Product>(mockProducts.map((p) => [p.id, p])); // 제품 ID를 키로 하는 Map 생성
     return mockOrderItems
-      .filter((item) => item.orderId === selectedOrder.id)    // 현재 선택된 주문의 id에 속한 주문 항목만 필터링
+      .filter((item) => item.orderId === selectedOrder.id) // 현재 선택된 주문의 id에 속한 주문 항목만 필터링
       .map((item) => ({
         ...item,
         productName: productMap.get(item.productId)?.productName ?? '알 수 없는 제품',
       }));
-  }, [selectedOrder]);  // 필터링된 주문 항목에 주문 id에 맞는 제품 이름을 추가해서 반환
+  }, [selectedOrder]); // 필터링된 주문 항목에 주문 id에 맞는 제품 이름을 추가해서 반환
 
   return (
     <Content style={{ margin: '24px', padding: '24px' }}>
@@ -390,7 +389,7 @@ export default function OrderManagementPage() {
             <Descriptions.Item label="주문 항목" span={2}>
               {/* 주문 상세 품목 테이블 */}
               <Table
-                dataSource={selectedOrderItems}   // 선택된 행에 대한 제품 정보만
+                dataSource={selectedOrderItems} // 선택된 행에 대한 제품 정보만
                 columns={[
                   { title: '제품명', dataIndex: 'productName', key: 'productName' },
                   { title: '수량', dataIndex: 'quantity', key: 'quantity' },

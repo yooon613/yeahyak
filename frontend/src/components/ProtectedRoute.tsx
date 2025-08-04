@@ -1,11 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import type { Role } from '../types/auth';
 
-interface Props {
-  allowedRoles: ('ADMIN' | 'BRANCH')[];
+interface ProtectedRouteProps {
+  allowedRoles: Role[];
 }
 
-export default function ProtectedRoute({ allowedRoles }: Props) {
+export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 

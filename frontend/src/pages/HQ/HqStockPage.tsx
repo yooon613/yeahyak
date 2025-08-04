@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
-import {
-  Table,
-  Typography,
-  Input,
-  Space,
-  Button,
-  Modal,
-} from 'antd';
+import { Button, Input, Modal, Space, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import React, { useState } from 'react';
 
-import { mockHqStocks, mockHqStockTransactions } from '../../mocks/stock.mock';
-import { mockProducts } from '../../mocks/product.mock';
-import type { Product, HqStockTransaction } from '../../mocks/types';
 import { mockOrders } from '../../mocks/order.mock';
+import { mockPharmacies } from '../../mocks/pharmacy.mock';
+import { mockProducts } from '../../mocks/product.mock';
 import { mockReturns } from '../../mocks/return.mock';
-import { mockPharmacies } from '../../mocks/auth.mock';
+import { mockHqStocks, mockHqStockTransactions } from '../../mocks/stock.mock';
+import type { Product } from '../../mocks/types';
 
 const { Title } = Typography;
 
@@ -70,7 +63,7 @@ export default function HqStockPage() {
       ? data.filter(
           (item) =>
             item.productCode.toLowerCase().includes(keyword) ||
-            item.productName.toLowerCase().includes(keyword)
+            item.productName.toLowerCase().includes(keyword),
         )
       : data;
     setFilteredData(result);
@@ -150,9 +143,6 @@ export default function HqStockPage() {
     return result.reverse();
   };
 
-
-
-
   const columns: ColumnsType<StockItem> = [
     {
       title: 'No',
@@ -181,9 +171,7 @@ export default function HqStockPage() {
       title: '재고수량',
       dataIndex: 'quantity',
       key: 'quantity',
-      render: (value) => (
-        <span style={{ color: value === 0 ? 'red' : undefined }}>{value}</span>
-      ),
+      render: (value) => <span style={{ color: value === 0 ? 'red' : undefined }}>{value}</span>,
     },
     {
       title: '최종 입고 일시',
@@ -231,23 +219,21 @@ export default function HqStockPage() {
         width={700}
       >
         {selectedItem && (
-            <Table
-              size="small"
-              pagination={false}
-              columns={[
-                { title: '날짜', dataIndex: 'date', key: 'date' },
-                { title: '구분', dataIndex: 'type', key: 'type' },
-                { title: '수량', dataIndex: 'quantity', key: 'quantity' },
-                { title: '재고', dataIndex: 'balance', key: 'balance' },
-                { title: '비고', dataIndex: 'remark', key: 'remark' },
-              ]}
-              dataSource={getModalData()}
-              rowKey="id"
-            />
-
+          <Table
+            size="small"
+            pagination={false}
+            columns={[
+              { title: '날짜', dataIndex: 'date', key: 'date' },
+              { title: '구분', dataIndex: 'type', key: 'type' },
+              { title: '수량', dataIndex: 'quantity', key: 'quantity' },
+              { title: '재고', dataIndex: 'balance', key: 'balance' },
+              { title: '비고', dataIndex: 'remark', key: 'remark' },
+            ]}
+            dataSource={getModalData()}
+            rowKey="id"
+          />
         )}
       </Modal>
-
     </div>
   );
 }

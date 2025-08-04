@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
-  Row,
-  Col,
-  Typography,
+  Button,
   Card,
-  DatePicker,
-  Select,
   Cascader,
-  Table,
-  Tag,
+  Col,
+  DatePicker,
+  Descriptions,
   Form,
   Modal,
-  Descriptions,
-  Button,
+  Row,
+  Select,
   Statistic,
+  Table,
+  Tag,
+  Typography,
 } from 'antd';
 
-import { Pie, Column } from '@ant-design/plots';
+import { Column, Pie } from '@ant-design/plots';
 
 import type { CascaderProps, GetProp, TableProps } from 'antd'; // 타입 정의
 
@@ -385,7 +385,8 @@ const dummy: TableData[] = [
   },
 ];
 
-const evaluateStatus = (          // 전체 재고 수를 바탕으로 정상 / 부족 / 과다 판정
+const evaluateStatus = (
+  // 전체 재고 수를 바탕으로 정상 / 부족 / 과다 판정
   stock: Record<string, number>,
   predict: Record<string, number>,
 ): StatusType => {
@@ -403,7 +404,8 @@ const Dummy: TableData[] = dummy.map((item) => ({
   status: evaluateStatus(item.stock, item.predict),
 }));
 
-const columns: TableProps<TableData>['columns'] = [   // 테이블에 들어가는 컬럼 지정
+const columns: TableProps<TableData>['columns'] = [
+  // 테이블에 들어가는 컬럼 지정
   { title: '기준월', dataIndex: 'date', key: 'date' },
   { title: '지점명', dataIndex: 'branch', key: 'branch' },
   { title: '주문 건수', dataIndex: 'order', key: 'order' },
@@ -411,11 +413,12 @@ const columns: TableProps<TableData>['columns'] = [   // 테이블에 들어가�
     title: '예측 대비',
     dataIndex: 'status',
     key: 'status',
-    render: (_, record) => renderStatusTags(record.status),  
+    render: (_, record) => renderStatusTags(record.status),
   },
 ];
 
-const filter = (    // 지역 선택에서 검색으로 찾을 수 있도록 설정
+const filter = (
+  // 지역 선택에서 검색으로 찾을 수 있도록 설정
   inputValue: string,
   path: DefaultOptionType[], // 지역 선택
 ) =>
@@ -423,7 +426,8 @@ const filter = (    // 지역 선택에서 검색으로 찾을 수 있도록 설
     (option) => (option.label as string).toLowerCase().indexOf(inputValue.toLowerCase()) > -1,
   );
 
-const renderStatusTags = (status: string[] = []) => {  // status에 저장되있는 값에 tag 속성 부여
+const renderStatusTags = (status: string[] = []) => {
+  // status에 저장되있는 값에 tag 속성 부여
   return (
     <>
       {status.map((tag) => {
@@ -453,7 +457,8 @@ const renderStatusTags = (status: string[] = []) => {  // status에 저장되있
   );
 };
 
-const Modal_MedicineTable = (branch: TableData) => {        // 모달 내부에 테이블 작성
+const Modal_MedicineTable = (branch: TableData) => {
+  // 모달 내부에 테이블 작성
   const medicines = Object.keys(branch.stock);
 
   const rows = medicines.map((name) => ({
@@ -485,8 +490,9 @@ const Modal_MedicineTable = (branch: TableData) => {        // 모달 내부에 
   return <Table columns={columns} dataSource={rows} pagination={false} size="small" />;
 };
 
-export default function BranchMonitoringPage() {   // 페이지 작성 시작
-  const [form] = Form.useForm();        // 필터 검색을 위한 form 설정
+export default function BranchMonitoringPage() {
+  // 페이지 작성 시작
+  const [form] = Form.useForm(); // 필터 검색을 위한 form 설정
   const [filteredData, setFilteredData] = useState<TableData[]>(Dummy); // 초기 데이터는 전체, 필터 검색을 위한 데이터 처리
 
   const [selectedBranch, setSelectedBranch] = useState<TableData | null>(null);
@@ -524,11 +530,13 @@ export default function BranchMonitoringPage() {   // 페이지 작성 시작
     setFilteredData(result);
   };
 
-  const getTotal = (predict: Record<string, number>) => {      // 우측 하단에 들어가는 총 합 카드에 사용, 입력받은 인자의 총합을 구해서 리턴
+  const getTotal = (predict: Record<string, number>) => {
+    // 우측 하단에 들어가는 총 합 카드에 사용, 입력받은 인자의 총합을 구해서 리턴
     return Object.values(predict).reduce((a, b) => a + b, 0);
   };
 
-  const StatusCounts = (data: TableData[]) => {         // 테이블 내에서 
+  const StatusCounts = (data: TableData[]) => {
+    // 테이블 내에서
     const counts = { 부족: 0, 정상: 0, 과다: 0 };
 
     data.forEach((branch) => {

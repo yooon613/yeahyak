@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { DatePicker, Input, Row, Col, Typography, Table, Tag, Card } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
 import { Line } from '@ant-design/plots';
+import { Card, Col, DatePicker, Input, Row, Table, Tag, Typography } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
+import { useState } from 'react';
 
 const { RangePicker } = DatePicker;
 const { Title } = Typography;
@@ -148,9 +148,7 @@ const columns = (onRowClick: (product: string) => void): ColumnsType<DataType> =
     ],
     onFilter: (value, record) => record.status === value,
     render: (status) => {
-      const color =
-        status === '부족' ? 'volcano' :
-        status === '정상' ? 'green' : 'geekblue';
+      const color = status === '부족' ? 'volcano' : status === '정상' ? 'green' : 'geekblue';
       return <Tag color={color}>{status}</Tag>;
     },
   },
@@ -191,7 +189,7 @@ export default function DemandForecastPage() {
 
   const handleDateChange = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     if (dates && dates[0] && dates[1]) {
       const start = dates[0].format('YYYY-MM');
@@ -203,7 +201,7 @@ export default function DemandForecastPage() {
   };
 
   const filteredData = data.filter((item) =>
-    item.product.toLowerCase().includes(searchText.toLowerCase())
+    item.product.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   const fullChartData = monthlyMock[selectedProduct] || [];
@@ -241,7 +239,9 @@ export default function DemandForecastPage() {
       <Title level={3}>전국 수요 예측 및 발주 수량 추천 페이지</Title>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col><RangePicker picker="month" onChange={handleDateChange} /></Col>
+        <Col>
+          <RangePicker picker="month" onChange={handleDateChange} />
+        </Col>
         <Col>
           <Input
             placeholder="제품명 검색"
@@ -250,7 +250,7 @@ export default function DemandForecastPage() {
             allowClear
           />
         </Col>
-      </Row>  
+      </Row>
 
       <Card style={{ marginBottom: 48 }}>
         {selectedProduct}

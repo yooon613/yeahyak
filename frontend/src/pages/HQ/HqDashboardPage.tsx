@@ -1,8 +1,8 @@
 import { Card, Col, List, Row, Table } from 'antd';
 import { Link } from 'react-router-dom';
-import { mockPharmacies } from '../../mocks/auth.mock';
 import { mockNotices } from '../../mocks/notice.mock';
 import { mockOrders } from '../../mocks/order.mock';
+import { mockPharmacies } from '../../mocks/pharmacy.mock';
 
 const bestSeller = [
   { key: 1, productName: '타이레놀정500mg', manufacturer: '한국존슨앤드존슨판매', quantity: 22292 },

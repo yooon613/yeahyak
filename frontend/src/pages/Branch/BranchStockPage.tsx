@@ -1,23 +1,11 @@
-import React, { useState } from 'react';
-import {
-  Table,
-  Typography,
-  Input,
-  Space,
-  Button,
-  Modal,
-} from 'antd';
+import { Button, Input, Modal, Space, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import React, { useState } from 'react';
 
-import {
-  mockPharmacyStocks,
-  mockPharmacyStockTransactions,
-} from '../../mocks/stock.mock';
-import { mockProducts } from '../../mocks/product.mock';
 import { mockOrders } from '../../mocks/order.mock';
-import { mockReturns } from '../../mocks/return.mock';
-import { mockPharmacies } from '../../mocks/auth.mock';
-
+import { mockPharmacies } from '../../mocks/pharmacy.mock';
+import { mockProducts } from '../../mocks/product.mock';
+import { mockPharmacyStocks, mockPharmacyStockTransactions } from '../../mocks/stock.mock';
 import type { Product } from '../../mocks/types';
 
 const { Title } = Typography;
@@ -71,7 +59,7 @@ export default function BranchStockPage() {
       ? data.filter(
           (item) =>
             item.productCode.toLowerCase().includes(keyword) ||
-            item.productName.toLowerCase().includes(keyword)
+            item.productName.toLowerCase().includes(keyword),
         )
       : data;
     setFilteredData(result);
@@ -167,9 +155,7 @@ export default function BranchStockPage() {
       title: '재고수량',
       dataIndex: 'quantity',
       key: 'quantity',
-      render: (value) => (
-        <span style={{ color: value === 0 ? 'red' : undefined }}>{value}</span>
-      ),
+      render: (value) => <span style={{ color: value === 0 ? 'red' : undefined }}>{value}</span>,
     },
     {
       title: '최종 입고 일시',

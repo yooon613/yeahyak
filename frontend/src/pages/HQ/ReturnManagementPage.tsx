@@ -1,18 +1,8 @@
-import React, { useState } from 'react';
-import {
-  Button,
-  Card,
-  Col,
-  Input,
-  Modal,
-  Row,
-  Statistic,
-  Table,
-  Tag,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
 import { SearchOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Input, Modal, Row, Statistic, Table, Tag } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import { useState } from 'react';
 
 interface ReturnRequest {
   key: string;
@@ -74,8 +64,8 @@ export default function ReturnManagementPage() {
   const handleApprove = (key: string) => {
     setData((prev) =>
       prev.map((item) =>
-        item.key === key ? { ...item, status: '승인 완료', processedDate: today } : item
-      )
+        item.key === key ? { ...item, status: '승인 완료', processedDate: today } : item,
+      ),
     );
   };
 
@@ -90,8 +80,8 @@ export default function ReturnManagementPage() {
       prev.map((item) =>
         item.key === rejectTargetKey
           ? { ...item, status: '반품 거절', rejectReason, processedDate: today }
-          : item
-      )
+          : item,
+      ),
     );
     setRejectModalOpen(false);
     setRejectReason('');
@@ -101,9 +91,8 @@ export default function ReturnManagementPage() {
   const filteredData = data.filter((item) => item.storeName.includes(search));
 
   const totalAmount = data.reduce(
-    (sum, item) =>
-      item.status === '승인 완료' ? sum + item.quantity * item.price : sum,
-    0
+    (sum, item) => (item.status === '승인 완료' ? sum + item.quantity * item.price : sum),
+    0,
   );
 
   const columns: ColumnsType<ReturnRequest> = [
@@ -136,7 +125,11 @@ export default function ReturnManagementPage() {
               <div style={{ fontSize: 12, color: '#999' }}>사유: {record.rejectReason}</div>
             </>
           );
-        return <Tag icon={<span>⏳</span>} color="blue">승인 대기</Tag>;
+        return (
+          <Tag icon={<span>⏳</span>} color="blue">
+            승인 대기
+          </Tag>
+        );
       },
     },
     {
@@ -152,7 +145,12 @@ export default function ReturnManagementPage() {
             <Button type="primary" size="small" onClick={() => handleApprove(record.key)}>
               승인
             </Button>
-            <Button danger size="small" onClick={() => handleRejectClick(record.key)} style={{ marginLeft: 8 }}>
+            <Button
+              danger
+              size="small"
+              onClick={() => handleRejectClick(record.key)}
+              style={{ marginLeft: 8 }}
+            >
               거절
             </Button>
           </>
@@ -165,10 +163,32 @@ export default function ReturnManagementPage() {
   return (
     <div style={{ padding: '24px' }}>
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}><Card><Statistic title="총 요청" value={data.length} /></Card></Col>
-        <Col span={6}><Card><Statistic title="승인 완료" value={data.filter(i => i.status === '승인 완료').length} /></Card></Col>
-        <Col span={6}><Card><Statistic title="반품 거절" value={data.filter(i => i.status === '반품 거절').length} /></Card></Col>
-        <Col span={6}><Card><Statistic title="총 반품 금액" value={totalAmount} suffix="원" /></Card></Col>
+        <Col span={6}>
+          <Card>
+            <Statistic title="총 요청" value={data.length} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="승인 완료"
+              value={data.filter((i) => i.status === '승인 완료').length}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="반품 거절"
+              value={data.filter((i) => i.status === '반품 거절').length}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic title="총 반품 금액" value={totalAmount} suffix="원" />
+          </Card>
+        </Col>
       </Row>
 
       <Row justify="end" style={{ marginBottom: 16 }}>

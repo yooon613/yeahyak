@@ -13,8 +13,8 @@ import {
 } from '@ant-design/icons';
 import { ConfigProvider, Dropdown, Flex, Layout, Menu, message, Typography } from 'antd';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import type { Pharmacy } from '../mocks/types';
 import { useAuthStore } from '../stores/authStore';
+import type { Pharmacy } from '../types/pharmacy';
 
 const { Sider, Header, Content, Footer } = Layout;
 

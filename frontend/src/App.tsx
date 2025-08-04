@@ -11,7 +11,7 @@ import OrderRequestPage from './pages/branch/OrderRequestPage';
 import ReturnRequestPage from './pages/branch/ReturnRequestPage';
 import HqRegisterPage from './pages/common/auth/HqRegisterPage';
 import LoginPage from './pages/common/auth/LoginPage';
-import PasswordChangePage from './pages/common/auth/PasswordChangePage';
+//import PasswordChangePage from './pages/common/auth/PasswordChangePage';
 import RegisterPage from './pages/common/auth/RegisterPage';
 import ForbiddenPage from './pages/common/error/ForbiddenPage';
 import NotFoundPage from './pages/common/error/NotFoundPage';
@@ -56,11 +56,11 @@ export default function App() {
       </Route>
 
       {/* 본사 */}
-      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['HQ']} />}>
         <Route path="/hq" element={<HqLayout />}>
           <Route index element={<HqDashboardPage />} />
           <Route path="profile-edit" element={<HqProfileEditPage />} />
-          <Route path="password-change" element={<PasswordChangePage />} />
+          {/* <Route path="password-change" element={<PasswordChangePage />} /> */}
           <Route path="notices" element={<NoticeListPage />} />
           <Route path="notices/:id" element={<NoticeDetailPage />} />
           <Route path="notices/new" element={<HqNoticeRegisterPage />} />
@@ -82,7 +82,7 @@ export default function App() {
       <Route element={<ProtectedRoute allowedRoles={['BRANCH']} />}>
         <Route path="/branch" element={<BranchLayout />}>
           <Route index element={<BranchDashboardPage />} />
-          <Route path="password-change" element={<PasswordChangePage />} />
+          {/* <Route path="password-change" element={<PasswordChangePage />} /> */}
           <Route path="profile-edit" element={<BranchProfileEditPage />} />
           <Route path="notices" element={<NoticeListPage />} />
           <Route path="notices/:id" element={<NoticeDetailPage />} />

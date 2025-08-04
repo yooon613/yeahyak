@@ -1,26 +1,25 @@
 import {
-  Row,
-  Col,
-  Layout,
-  Typography,
-  Table,
   Button,
-  Modal,
-  Statistic,
   Card,
+  Col,
   Descriptions,
-  Tag,
-  InputNumber,
   Input,
+  InputNumber,
+  Modal,
+  Row,
+  Statistic,
+  Table,
+  Tag,
+  Typography,
 } from 'antd';
 import React, { useState } from 'react';
 
 import type { ColumnsType } from 'antd/es/table';
 
 // 목 데이터 및 타입 임포트
+import { mockOrderItems, mockOrders } from '../../mocks/order.mock';
 import { mockProducts } from '../../mocks/product.mock';
-import { mockOrders, mockOrderItems } from '../../mocks/order.mock';
-import type { Product, Order, OrderItem } from '../../mocks/types';
+import type { Order, OrderItem, Product } from '../../mocks/types';
 
 const { Text } = Typography;
 
@@ -189,7 +188,14 @@ export default function OrderRequestPage() {
       title: '이미지',
       dataIndex: 'image',
       key: 'image',
-      render: (src: string) => <img src={src} alt="제품 이미지" width={50} onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/50')} />,
+      render: (src: string) => (
+        <img
+          src={src}
+          alt="제품 이미지"
+          width={50}
+          onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/50')}
+        />
+      ),
     },
     { title: '품목코드', dataIndex: 'code', key: 'code' },
     { title: '품명', dataIndex: 'name', key: 'name', ellipsis: true },
@@ -297,7 +303,11 @@ export default function OrderRequestPage() {
                   </Card>
                 </Col>
                 <Col>
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', fontSize: 40 }}>-</div>
+                  <div
+                    style={{ height: '100%', display: 'flex', alignItems: 'center', fontSize: 40 }}
+                  >
+                    -
+                  </div>
                 </Col>
                 <Col span={6}>
                   <Card variant="borderless">
@@ -309,7 +319,11 @@ export default function OrderRequestPage() {
                   </Card>
                 </Col>
                 <Col>
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', fontSize: 40 }}>=</div>
+                  <div
+                    style={{ height: '100%', display: 'flex', alignItems: 'center', fontSize: 40 }}
+                  >
+                    =
+                  </div>
                 </Col>
                 <Col span={5}>
                   <Card variant="borderless">
@@ -335,7 +349,13 @@ export default function OrderRequestPage() {
                   <Button type="primary" onClick={showProductModal} size="large">
                     품목 검색
                   </Button>
-                  <Button type="primary" size="large" danger onClick={handleOrder} disabled={cart.length === 0}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    danger
+                    onClick={handleOrder}
+                    disabled={cart.length === 0}
+                  >
                     선택 항목 발주
                   </Button>
                 </Col>
@@ -390,7 +410,12 @@ export default function OrderRequestPage() {
           columns={[
             { title: '품명', dataIndex: 'productName', key: 'productName' },
             { title: '제조사', dataIndex: 'manufacturer', key: 'manufacturer' },
-            { title: '단가', dataIndex: 'unitPrice', key: 'unitPrice', render: (v) => `${v.toLocaleString()}원` },
+            {
+              title: '단가',
+              dataIndex: 'unitPrice',
+              key: 'unitPrice',
+              render: (v) => `${v.toLocaleString()}원`,
+            },
             {
               title: '수량',
               key: 'quantity',
@@ -421,8 +446,12 @@ export default function OrderRequestPage() {
         {selectedOrder && (
           <Descriptions bordered column={1}>
             <Descriptions.Item label="주문번호">{selectedOrder.id}</Descriptions.Item>
-            <Descriptions.Item label="주문일자">{new Date(selectedOrder.date).toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="총 금액">{selectedOrder.totalAmount.toLocaleString()}원</Descriptions.Item>
+            <Descriptions.Item label="주문일자">
+              {new Date(selectedOrder.date).toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="총 금액">
+              {selectedOrder.totalAmount.toLocaleString()}원
+            </Descriptions.Item>
             <Descriptions.Item label="상태">{getStatusTag(selectedOrder.status)}</Descriptions.Item>
             <Descriptions.Item label="품목 목록">
               <ul style={{ margin: 0, paddingLeft: 16 }}>
@@ -430,7 +459,8 @@ export default function OrderRequestPage() {
                   const product = mockProducts.find((p) => p.id === item.productId);
                   return (
                     <li key={item.id}>
-                      {product?.productName} - {item.quantity}개 ({item.subtotalPrice.toLocaleString()}원)
+                      {product?.productName} - {item.quantity}개 (
+                      {item.subtotalPrice.toLocaleString()}원)
                     </li>
                   );
                 })}
