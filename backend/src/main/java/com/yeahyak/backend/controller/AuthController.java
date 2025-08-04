@@ -144,7 +144,7 @@ public class AuthController {
         if (principal instanceof User user) {
             email = user.getEmail();
         } else if (principal instanceof org.springframework.security.core.userdetails.User userDetails) {
-            email = userDetails.getUsername(); // spring userDetails
+            email = userDetails.getUsername();
         } else if (principal instanceof String str) {
             email = str;
         } else {
