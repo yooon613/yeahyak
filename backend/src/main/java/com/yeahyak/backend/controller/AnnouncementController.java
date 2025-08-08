@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import com.yeahyak.backend.dto.ApiResponse;
+import com.yeahyak.backend.entity.enums.AnnouncementType;
+import com.yeahyak.backend.dto.AnnouncementListResponseDTO;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,25 +24,43 @@ public class AnnouncementController {
 
     @PostMapping
     public ApiResponse<Announcement> create(@RequestBody AnnouncementRequestDTO dto) {
-        Announcement announcement = Announcement.builder()
-                .type(dto.getType())
-                .title(dto.getTitle())
-                .content(dto.getContent())
-                .createdAt(LocalDateTime.now())
-                .build();
+        try {
+            Announcement announcement = Announcement.builder()
+                    .type(dto.getType())
+                    .title(dto.getTitle())
+                    .content(dto.getContent())
+                    .attachmentUrl(dto.getAttachmentUrl())
+                    .createdAt(LocalDateTime.now())
+                    .build();
 
-        return new ApiResponse<>(true, announcementService.save(announcement));
+            Announcement saved = announcementService.save(announcement);
+
+            System.out.println(" 저장된 공지사항 ID: " + saved.getAnnouncementId());
+            System.out.println(" 저장된 공지: " + saved);
+
+            return new ApiResponse<>(true, saved);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ApiResponse<>(false, null, "등록 중 오류: " + e.getMessage());
+        }
     }
 
+
     @GetMapping
-    public ApiResponse<List<Announcement>> getAll(
+    public ApiResponse<AnnouncementListResponseDTO> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String type) {
 
         Page<Announcement> pagedResult = announcementService.findAllPaged(page, size, type);
-        return new ApiResponse<>(true, pagedResult.getContent());
+        AnnouncementListResponseDTO result = new AnnouncementListResponseDTO(
+            pagedResult.getContent(), pagedResult.getTotalElements()
+        );
+        
+        return new ApiResponse<AnnouncementListResponseDTO>(true, result);
     }
+
 
     @GetMapping("/{id}")
     public ApiResponse<Announcement> getOne(@PathVariable Long id) {
@@ -67,6 +88,12 @@ public class AnnouncementController {
         }
         if (fields.containsKey("content")) {
             announcement.setContent((String) fields.get("content"));
+        }
+        if (fields.containsKey("type")) {
+            announcement.setType(AnnouncementType.valueOf((String) fields.get("type")));
+        }
+        if (fields.containsKey("attachmentUrl")) {
+            announcement.setAttachmentUrl((String) fields.get("attachmentUrl"));
         }
         announcement.setUpdatedAt(LocalDateTime.now());
 
