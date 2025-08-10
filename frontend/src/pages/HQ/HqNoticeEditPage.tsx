@@ -12,7 +12,7 @@ import {
   Upload,
   Modal,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TiptapEditor from '../../components/TiptapEditor';
 import { instance } from '../../api/api';
@@ -33,34 +33,43 @@ export default function HqNoticeEditPage() {
 
   // 공지사항 로드
   const fetchNotice = async () => {
+    if (!id) {
+      messageApi.error('잘못된 접근입니다.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await instance.get(`/announcements/${id}`);
-      if (res.data.success) {
-        const notice: Announcement = res.data.data;
-        form.setFieldsValue({
-          type: notice.type,
-          title: notice.title,
-          content: notice.content,
-          attachmentUrl: notice.attachmentUrl || '',
-        });
+      const list: Announcement[] = Array.isArray(res?.data?.data) ? res.data.data : [];
+      const notice: Announcement | null = list[0] ?? null;
 
-        if (notice.attachmentUrl) {
-          setFileList([
-            {
-              uid: '-1',
-              name: notice.attachmentUrl.split('/').pop() || '첨부파일',
-              status: 'done',
-              url: notice.attachmentUrl,
-            },
-          ]);
-        }
-      } else {
+      if (!notice) {
         messageApi.error('공지사항 정보를 불러오지 못했습니다.');
+        return;
       }
+
+      form.setFieldsValue({
+        type: notice.type,
+        title: notice.title,
+        content: notice.content,
+        attachmentUrl: notice.attachmentUrl || '',
+      });
+
+      if (notice.attachmentUrl) {
+        setFileList([
+          {
+            uid: '-1',
+            name: notice.attachmentUrl.split('/').pop() || '첨부파일',
+            status: 'done',
+            url: notice.attachmentUrl,
+          },
+        ]);
+      }
+      setIsEdited(false);
     } catch (e: any) {
       console.error('공지사항 로딩 실패:', e);
-      messageApi.error(e.message || '공지사항 로딩 중 오류가 발생했습니다.');
+      messageApi.error(e?.response?.data?.message ?? e?.message ?? '공지사항 로딩 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -68,66 +77,71 @@ export default function HqNoticeEditPage() {
 
   useEffect(() => {
     fetchNotice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // 수정 감지
   useEffect(() => {
-    if (!isEdited && (watchedType || watchedContent)) {
-      setIsEdited(true);
-    }
+    if (!isEdited && (watchedType || watchedContent)) setIsEdited(true);
   }, [watchedType, watchedContent, isEdited]);
 
-  // 첨부파일 변경 처리
-  const handleChange: UploadProps['onChange'] = ({ fileList }) => {
-    setFileList(fileList);
-    form.setFieldValue('attachmentUrl', fileList[0]?.name || '');
+  // 첨부파일 변경/삭제
+  const handleChange: UploadProps['onChange'] = ({ fileList: fl }) => {
+    setFileList(fl);
+    const f = fl[0];
+    if (f?.originFileObj) {
+      // TODO: 실제 업로드 후 응답 URL을 저장하세요.
+      form.setFieldValue('attachmentUrl', f.name || '');
+    } else if (!f) {
+      form.setFieldValue('attachmentUrl', '');
+    }
+    setIsEdited(true);
   };
 
-  // AI 요약 호출
+  const handleRemove: UploadProps['onRemove'] = async () => {
+    form.setFieldValue('attachmentUrl', '');
+    setFileList([]);
+    setIsEdited(true);
+    return true;
+  };
+
+  // (옵션) AI 요약 버튼 — 실제 엔드포인트 연결되면 구현
+  const aiEnabled = useMemo(() => {
+    return !!watchedType && fileList.length > 0 && !!fileList[0].originFileObj;
+  }, [watchedType, fileList]);
+
   const handleAiSummarize = async () => {
-    if (fileList.length === 0 || !fileList[0].originFileObj) {
-      messageApi.warning('첨부 파일이 없습니다.');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('file', fileList[0].originFileObj as File);
-
-      const res = await instance.post(`/ai/summarize/${watchedType.toLowerCase()}`, formData);
-      form.setFieldsValue({ content: res.data.summary });
-      messageApi.success('AI가 문서를 요약했습니다.');
-    } catch (e: any) {
-      console.error('문서 요약 실패:', e);
-      messageApi.error(e.message || '문서 요약 중 오류가 발생했습니다.');
-    }
+    messageApi.info('요약 서버 엔드포인트가 아직 연결되지 않았습니다.');
   };
 
-  // 수정 제출
+  // PATCH: type은 변경하지 않음(백엔드 기준)
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       const payload = {
-        type: values.type,
-        title: values.title,
-        content: values.content,
+        title: String(values.title).trim(),
+        content: values.content as string,
         attachmentUrl: values.attachmentUrl || '',
       };
+      if (!payload.title) {
+        messageApi.warning('제목은 공백만 입력할 수 없습니다.');
+        return;
+      }
 
       const res = await instance.patch(`/announcements/${id}`, payload);
-      if (res.data.success) {
+      if (res.data?.success) {
         messageApi.success('공지사항이 수정되었습니다.');
+        setIsEdited(false);
         navigate(`/hq/notices/${id}`);
       } else {
         messageApi.error('공지사항 수정에 실패했습니다.');
       }
     } catch (e: any) {
       console.error('공지사항 수정 실패:', e);
-      messageApi.error(e.message || '공지사항 수정 중 오류가 발생했습니다.');
+      messageApi.error(e?.response?.data?.message ?? e?.message ?? '공지사항 수정 중 오류가 발생했습니다.');
     }
   };
 
-  // 뒤로가기 확인
   const handleBack = () => {
     if (isEdited) {
       Modal.confirm({
@@ -142,29 +156,19 @@ export default function HqNoticeEditPage() {
     }
   };
 
+  if (loading) return <Typography.Text>로딩 중...</Typography.Text>;
+
   return (
     <>
       {contextHolder}
       <Space size="large" align="baseline">
-        <Button
-          type="link"
-          size="large"
-          shape="circle"
-          icon={<LeftOutlined />}
-          onClick={handleBack}
-        />
-        <Typography.Title level={3} style={{ marginBottom: '24px' }}>
+        <Button type="link" size="large" shape="circle" icon={<LeftOutlined />} onClick={handleBack} />
+        <Typography.Title level={3} style={{ marginBottom: 24 }}>
           공지사항 수정
         </Typography.Title>
       </Space>
 
-      <Form
-        form={form}
-        name="notice-edit"
-        layout="vertical"
-        onFinish={handleSubmit}
-        autoComplete="off"
-      >
+      <Form form={form} name="notice-edit" layout="vertical" onFinish={handleSubmit} autoComplete="off">
         <Flex gap={8}>
           <Form.Item
             name="type"
@@ -179,13 +183,23 @@ export default function HqNoticeEditPage() {
                 { value: 'LAW', label: '법령' },
                 { value: 'NEW_PRODUCT', label: '신제품' },
               ]}
+              disabled // 🔒 PATCH 기준: type 변경 미지원
             />
           </Form.Item>
 
           <Form.Item
             name="title"
             label="제목"
-            rules={[{ required: true, message: '제목을 입력해주세요.' }]}
+            rules={[
+              { required: true, message: '제목을 입력해주세요.' },
+              { max: 200, message: '제목은 200자 이하여야 합니다.' },
+              {
+                validator: (_, v) =>
+                  (v && String(v).trim().length > 0)
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('제목은 공백만 입력할 수 없습니다.')),
+              },
+            ]}
             style={{ flex: 5 }}
           >
             <Input />
@@ -195,11 +209,22 @@ export default function HqNoticeEditPage() {
         <Form.Item
           name="content"
           label="내용"
-          rules={[{ required: true, message: '내용을 입력해주세요.' }]}
+          rules={[
+            { required: true, message: '내용을 입력해주세요.' },
+            {
+              validator: (_, v) =>
+                (v && String(v).replace(/<[^>]*>/g, '').trim().length > 0)
+                  ? Promise.resolve()
+                  : Promise.reject(new Error('내용은 공백만 입력할 수 없습니다.')),
+            },
+          ]}
         >
           <TiptapEditor
             value={watchedContent}
-            onChange={(val: string) => form.setFieldValue('content', val)}
+            onChange={(val: string) => {
+              form.setFieldValue('content', val);
+              if (!isEdited) setIsEdited(true);
+            }}
           />
         </Form.Item>
 
@@ -210,11 +235,12 @@ export default function HqNoticeEditPage() {
             </Form.Item>
 
             <Upload
-              accept=".pdf, .txt"
+              accept=".pdf,.txt"
               listType="text"
               fileList={fileList}
               beforeUpload={() => false}
               onChange={handleChange}
+              onRemove={handleRemove}
               maxCount={1}
             >
               {fileList.length >= 1 ? null : (
@@ -224,11 +250,7 @@ export default function HqNoticeEditPage() {
               )}
             </Upload>
 
-            <Button
-              type="primary"
-              disabled={watchedType === 'NOTICE'}
-              onClick={handleAiSummarize}
-            >
+            <Button type="primary" disabled={!aiEnabled} onClick={handleAiSummarize}>
               AI 요약
             </Button>
           </Space>

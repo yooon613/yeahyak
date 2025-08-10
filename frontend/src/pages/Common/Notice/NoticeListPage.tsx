@@ -29,119 +29,98 @@ export default function NoticeListPage() {
   const [activeTab, setActiveTab] = useState<AnnouncementType>('NOTICE');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const [search, setSearch] = useState({
-    field: 'title' as 'title' | 'content',
-    keyword: '',
-    appliedField: 'title' as 'title' | 'content',
-    appliedKeyword: '',
-  });
+  const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
 
   const [notices, setNotices] = useState<Announcement[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchNotices = async () => {
-  setLoading(true);
-  try {
-    const res = await instance.get('/announcements', {
-      params: {
+    setLoading(true);
+    try {
+      const params: Record<string, any> = {
         type: activeTab,
         page: currentPage - 1,
         size: PAGE_SIZE,
-      },
-    });
+      };
+      if (appliedKeyword.trim()) params.keyword = appliedKeyword.trim();
 
-    console.log('✨ 공지사항 목록 로딩:', res.data);
-
-    if (res.data.success && res.data.data) {
-      const { content, total } = res.data.data;
-      setNotices(content || []);
-      setTotal(total || 0);
-    } else {
+      const res = await instance.get('/announcements', { params });
+      if (res.data?.success) {
+        const list: Announcement[] = Array.isArray(res.data?.data) ? res.data.data : [];
+        const totalElements: number = res.data?.totalElements ?? 0;
+        setNotices(list);
+        setTotal(totalElements);
+      } else {
+        setNotices([]);
+        setTotal(0);
+      }
+    } catch (e: any) {
+      console.error('공지사항 목록 로딩 실패:', e);
+      messageApi.error(e?.response?.data?.message || '공지사항 목록 로딩 중 오류가 발생했습니다.');
       setNotices([]);
       setTotal(0);
+    } finally {
+      setLoading(false);
     }
-  } catch (e: any) {
-    console.error('공지사항 목록 로딩 실패:', e);
-    messageApi.error(e.response?.data?.message || '공지사항 목록 로딩 중 오류가 발생했습니다.');
-    setNotices([]);
-    setTotal(0);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchNotices();
-  }, [activeTab, currentPage, search.appliedField, search.appliedKeyword]);
+  }, [activeTab, currentPage, appliedKeyword]);
 
   const handleTabChange = (key: string) => {
     setActiveTab(key as AnnouncementType);
     setCurrentPage(1);
-    setSearch({
-      field: 'title',
-      keyword: '',
-      appliedField: 'title',
-      appliedKeyword: '',
-    });
+    setKeyword('');
+    setAppliedKeyword('');
   };
 
   const handleSearch = () => {
-    setSearch((prev) => ({
-      ...prev,
-      appliedField: prev.field,
-      appliedKeyword: prev.keyword.trim(),
-    }));
+    setAppliedKeyword(keyword);
     setCurrentPage(1);
   };
 
   const tableColumns: TableProps<Announcement>['columns'] = [
-    {
-      title: '번호',
-      dataIndex: 'announcementId',
-      key: 'announcementId',
-      width: '80px',
-    },
-    {
-      title: '제목',
-      dataIndex: 'title',
-      key: 'title',
-    },
+    { title: '번호', dataIndex: 'announcementId', key: 'announcementId', width: 80 },
+    { title: '제목', dataIndex: 'title', key: 'title', ellipsis: true },
     {
       title: '작성일',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm'),
-      width: '240px',
+      width: 200,
+      // 서버는 createdAt DESC 고정이므로 클라 정렬은 표시만
+      sorter: (a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf(),
+      defaultSortOrder: 'descend',
     },
   ];
 
-  const renderTable = () => {
-    return (
-      <Table
-        bordered
-        columns={tableColumns}
-        dataSource={notices}
-        loading={loading}
-        rowKey="announcementId"
-        onRow={(record) => ({
-          onClick: () => {
-            const basePath = user?.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
-            navigate(`${basePath}/notices/${record.announcementId}`);
-          },
-          style: { cursor: 'pointer' },
-        })}
-        pagination={{
-          position: ['bottomCenter'],
-          current: currentPage,
-          total: total,
-          pageSize: PAGE_SIZE,
-          onChange: (page) => setCurrentPage(page),
-        }}
-      />
-    );
-  };
+  const renderTable = () => (
+    <Table
+      bordered
+      columns={tableColumns}
+      dataSource={notices}
+      loading={loading}
+      rowKey="announcementId"
+      onRow={(record) => ({
+        onClick: () => {
+          const basePath = user?.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
+          navigate(`${basePath}/notices/${record.announcementId}`);
+        },
+        style: { cursor: 'pointer' },
+      })}
+      pagination={{
+        position: ['bottomCenter'],
+        current: currentPage,
+        total: total,
+        pageSize: PAGE_SIZE,
+        onChange: (page) => setCurrentPage(page),
+        showSizeChanger: false,
+      }}
+    />
+  );
 
   const tabsItems: TabsProps['items'] = [
     {
@@ -169,29 +148,19 @@ export default function NoticeListPage() {
   return (
     <>
       {contextHolder}
-      <Typography.Title level={3} style={{ marginBottom: '24px' }}>
+      <Typography.Title level={3} style={{ marginBottom: 24 }}>
         공지사항 목록
       </Typography.Title>
 
       <Tabs activeKey={activeTab} onChange={handleTabChange} items={tabsItems} centered />
 
-      <Flex wrap style={{ justifyContent: 'space-between' }}>
+      <Flex wrap style={{ justifyContent: 'space-between', marginBottom: 8 }}>
         <Space.Compact>
-          <Select
-            value={search.field}
-            onChange={(value) =>
-              setSearch((prev) => ({ ...prev, field: value as 'title' | 'content' }))
-            }
-            options={[
-              { value: 'title', label: '제목' },
-              { value: 'content', label: '내용' },
-            ]}
-          />
           <Input.Search
             allowClear
-            value={search.keyword}
+            value={keyword}
             placeholder="검색어 입력"
-            onChange={(e) => setSearch((prev) => ({ ...prev, keyword: e.target.value }))}
+            onChange={(e) => setKeyword(e.target.value)}
             onSearch={handleSearch}
           />
         </Space.Compact>
