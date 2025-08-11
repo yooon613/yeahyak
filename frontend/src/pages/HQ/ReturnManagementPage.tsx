@@ -114,7 +114,12 @@ export default function ReturnManagementPage() {
   const [rejectTargetReturnId, setRejectTargetReturnId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [search, setSearch] = useState('');
+  const [submittedSearch, setSubmittedSearch] = useState(''); // New state for search term after Enter
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0); // Total number of items for pagination
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedReturnDetail, setSelectedReturnDetail] = useState<ReturnResponseDto | null>(null);
@@ -125,17 +130,19 @@ export default function ReturnManagementPage() {
     setError(null);
     try {
       const params = {
-        page: 0, // 페이지네이션 필요 시 동적으로 변경
-        size: 100, // 한 페이지에 보여줄 항목 수
+        page: currentPage - 1, // 백엔드는 0-based 인덱스 사용
+        size: pageSize,
         status: statusFilter,
-        pharmacyName: search || undefined,
+        pharmacyName: submittedSearch || undefined,
       };
       const response = await api.get('/admin/returns', { params }); // api 인스턴스 사용
       // 백엔드 응답 구조에 맞춰 response.data.data를 직접 사용
       if (response.data.data) {
         setReturns(response.data.data);
+        setTotalElements(response.data.totalElements); // Assuming backend returns totalElements
       } else {
         setReturns([]);
+        setTotalElements(0);
       }
     } catch (err) {
       setError('반품 목록을 불러오는 데 실패했습니다.');
@@ -143,7 +150,7 @@ export default function ReturnManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [submittedSearch, statusFilter, currentPage, pageSize]);
 
   // [정리] 컴포넌트 마운트 및 필터 변경 시 반품 목록 조회
   useEffect(() => {
@@ -151,8 +158,6 @@ export default function ReturnManagementPage() {
   }, [fetchReturns]);
 
   // [수정] 반품 승인 처리 (API 연동)
-  // NOTE: 백엔드 AdminReturnController의 @RequestMapping이 /api/admin/returns로 변경됨
-  // NOTE: 이에 따라 api.patch의 경로도 수정됨
   const handleApprove = async (returnId: number) => {
     try {
       await api.patch(`/admin/returns/${returnId}/approve`);
@@ -171,8 +176,6 @@ export default function ReturnManagementPage() {
   };
 
   // [수정] 반품 거절 처리 (API 연동)
-  // NOTE: 백엔드 AdminReturnController의 @RequestMapping이 /api/admin/returns로 변경됨
-  // NOTE: 이에 따라 api.patch의 경로도 수정됨
   const handleRejectConfirm = async () => {
     if (!rejectTargetReturnId || !rejectReason) return;
     try {
@@ -282,6 +285,7 @@ export default function ReturnManagementPage() {
             placeholder="가맹점명 검색"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onPressEnter={() => setSubmittedSearch(search)} // Update submittedSearch on Enter
             style={{ width: 200, marginRight: 8 }}
           />
           <Select
@@ -302,7 +306,20 @@ export default function ReturnManagementPage() {
       <Table
         columns={columns}
         dataSource={returns}
-        pagination={{ pageSize: 10 }}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: totalElements,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            setPageSize(size);
+          },
+          showSizeChanger: true, // Allow changing page size
+          onShowSizeChange: (current, size) => {
+            setCurrentPage(current);
+            setPageSize(size);
+          },
+        }}
         rowKey="returnId"
         onRow={(record) => {
           return {

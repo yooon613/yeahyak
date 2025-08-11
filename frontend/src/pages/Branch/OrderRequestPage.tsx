@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { ColumnsType } from 'antd/es/table';
+import { ReloadOutlined } from '@ant-design/icons';
 // API 통신을 위한 axios 인스턴스를 가져옵니다.
 import { instance as api } from '../../api/api';
 // 전역 상태 관리를 위한 zustand 스토어를 가져옵니다。
@@ -459,9 +460,22 @@ export default function OrderRequestPage() {
           {/* 주문 내역 섹션 */}
           <Row style={{ marginTop: 40, marginBottom: 100 }}>
             <Col span={24}>
-              <Text strong style={{ fontSize: 20, marginBottom: 12, display: 'block' }}>
-                주문 내역
-              </Text>
+              <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
+                <Col>
+                  <Text strong style={{ fontSize: 20 }}>
+                    주문 내역
+                  </Text>
+                </Col>
+                <Col>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => fetchOrderHistory(orderPage)}
+                    loading={loading.orders}
+                  >
+                    새로고침
+                  </Button>
+                </Col>
+              </Row>
               <Spin spinning={loading.orders}>
                 <Table<OrderHistory>
                   columns={orderHistoryColumns}
