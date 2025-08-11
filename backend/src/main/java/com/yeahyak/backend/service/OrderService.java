@@ -73,7 +73,9 @@ public class OrderService {
 
             orderItemRepository.save(orderItem);
 
+            // [수정] OrderItemResponse에 productId를 포함하도록 수정
             itemResponses.add(OrderItemResponse.builder()
+                    .productId(product.getProductId())
                     .productName(product.getProductName())
                     .quantity(itemRequest.getQuantity())
                     .unitPrice(itemRequest.getUnitPrice())
@@ -101,7 +103,9 @@ public class OrderService {
             List<OrderItems> items = orderItemRepository.findByOrders(order);
 
             List<OrderItemResponse> itemResponses = items.stream().map(item ->
+                    // [수정] OrderItemResponse에 productId를 포함하도록 수정
                     OrderItemResponse.builder()
+                            .productId(item.getProduct().getProductId())
                             .productName(item.getProduct().getProductName())
                             .quantity(item.getQuantity())
                             .unitPrice(item.getUnitPrice())
@@ -136,7 +140,9 @@ public class OrderService {
         List<OrderResponse> orderResponses = orders.getContent().stream().map(order -> {
             List<OrderItems> items = orderItemRepository.findByOrders(order);
             List<OrderItemResponse> itemResponses = items.stream().map(item ->
+                    // [수정] OrderItemResponse에 productId를 포함하도록 수정
                     OrderItemResponse.builder()
+                            .productId(item.getProduct().getProductId())
                             .productName(item.getProduct().getProductName())
                             .quantity(item.getQuantity())
                             .unitPrice(item.getUnitPrice())

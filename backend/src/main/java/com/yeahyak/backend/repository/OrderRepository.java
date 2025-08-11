@@ -21,11 +21,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     );
 
 
-    @Query("""
+    // [수정] Pageable의 정렬 기능이 적용되도록 ORDER BY 구문 추가
+    @Query(value = """
     SELECT o FROM Order o
     WHERE (:status IS NULL OR o.status = :status)
       AND (:pharmacyName IS NULL OR :pharmacyName = '' 
            OR LOWER(o.pharmacy.pharmacyName) LIKE LOWER(CONCAT('%', :pharmacyName, '%')))
+    ORDER BY o.createdAt DESC
     """)
     Page<Order> findAllWithFilters(
             @Param("status") OrderStatus status,
@@ -33,10 +35,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
 
-    @Query("""
+    // [수정] Pageable의 정렬 기능이 적용되도록 ORDER BY 구문 추가
+    @Query(value = """
     SELECT o FROM Order o
     WHERE o.pharmacy.pharmacyId = :pharmacyId
       AND (:status IS NULL OR o.status = :status)
+    ORDER BY o.createdAt DESC
     """)
     Page<Order> findByPharmacyAndOptionalStatus(
             @Param("pharmacyId") Long pharmacyId,
