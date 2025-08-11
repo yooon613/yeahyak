@@ -1,43 +1,39 @@
 import { LeftOutlined, UploadOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
-import {
-  Button,
-  Flex,
-  Form,
-  Input,
-  message,
-  Select,
-  Space,
-  Typography,
-  Upload,
-  Modal,
-} from 'antd';
+import { Button, Flex, Form, Input, message, Modal, Select, Space, Typography, Upload } from 'antd';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { aiInstance, instance } from '../../api/api';
 import TiptapEditor from '../../components/TiptapEditor';
-import { instance } from '../../api/api';
-import type { Announcement } from '../../types/announcement.type';
+import {
+  ANNOUNCEMENT_TYPE,
+  type Announcement,
+  type AnnouncementRequest,
+} from '../../types/announcement.type';
 
 export default function HqNoticeEditPage() {
   const [messageApi, contextHolder] = message.useMessage();
+  const [modal, modalContextHolder] = Modal.useModal();
   const { id } = useParams();
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
   const [isEdited, setIsEdited] = useState(false);
 
   const watchedType = Form.useWatch('type', form);
   const watchedContent = Form.useWatch('content', form);
 
-  // 공지사항 로드
   const fetchNotice = async () => {
     setLoading(true);
     try {
       const res = await instance.get(`/announcements/${id}`);
+      // LOG: 테스트용 로그
+      console.log('✨ 공지사항 상세 로딩:', res.data);
       if (res.data.success) {
-        const notice: Announcement = res.data.data;
+        const notice: Announcement = res.data.data[0];
         form.setFieldsValue({
           type: notice.type,
           title: notice.title,
@@ -55,11 +51,9 @@ export default function HqNoticeEditPage() {
             },
           ]);
         }
-      } else {
-        messageApi.error('공지사항 정보를 불러오지 못했습니다.');
       }
     } catch (e: any) {
-      console.error('공지사항 로딩 실패:', e);
+      console.error('공지사항 상세 로딩 실패:', e);
       messageApi.error(e.message || '공지사항 로딩 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -70,56 +64,89 @@ export default function HqNoticeEditPage() {
     fetchNotice();
   }, [id]);
 
-  // 수정 감지
-  useEffect(() => {
-    if (!isEdited && (watchedType || watchedContent)) {
-      setIsEdited(true);
-    }
-  }, [watchedType, watchedContent, isEdited]);
-
-  // 첨부파일 변경 처리
   const handleChange: UploadProps['onChange'] = ({ fileList }) => {
     setFileList(fileList);
-    form.setFieldValue('attachmentUrl', fileList[0]?.name || '');
+    form.setFieldsValue({ attachmentUrl: fileList[0].url || '' });
   };
 
-  // AI 요약 호출
+  const handleRemove: UploadProps['onRemove'] = () => {
+    setFileList([]);
+    form.setFieldsValue({ attachmentUrl: '' });
+  };
+
   const handleAiSummarize = async () => {
     if (fileList.length === 0 || !fileList[0].originFileObj) {
       messageApi.warning('첨부 파일이 없습니다.');
       return;
     }
 
+    // 카테고리에 따른 엔드포인트 매핑
+    const getEndpoint = (type: keyof typeof ANNOUNCEMENT_TYPE) => {
+      switch (type) {
+        case ANNOUNCEMENT_TYPE.EPIDEMIC:
+          return '/summarize/epidemic';
+        case ANNOUNCEMENT_TYPE.LAW:
+          return '/summarize/law';
+        case ANNOUNCEMENT_TYPE.NEW_PRODUCT:
+          return '/summarize/pdf';
+        default:
+          return '/summarize/pdf';
+      }
+    };
+
+    setAiLoading(true);
     try {
       const formData = new FormData();
       formData.append('file', fileList[0].originFileObj as File);
 
-      const res = await instance.post(`/ai/summarize/${watchedType.toLowerCase()}`, formData);
-      form.setFieldsValue({ content: res.data.summary });
-      messageApi.success('AI가 문서를 요약했습니다.');
+      if (
+        watchedType === ANNOUNCEMENT_TYPE.LAW &&
+        !fileList[0].originFileObj.name.endsWith('.txt')
+      ) {
+        messageApi.warning('해당 카테고리 요약은 .txt 파일만 지원합니다.');
+        return;
+      } else if (
+        (watchedType === ANNOUNCEMENT_TYPE.EPIDEMIC ||
+          watchedType === ANNOUNCEMENT_TYPE.NEW_PRODUCT) &&
+        !fileList[0].originFileObj.name.endsWith('.pdf')
+      ) {
+        messageApi.warning('해당 카테고리 요약은 .pdf 파일만 지원합니다.');
+        return;
+      }
+
+      const res = await aiInstance.post(getEndpoint(watchedType), formData);
+      // LOG: 테스트용 로그
+      console.log('✨ AI 문서 요약:', res.data);
+      if (res.data.success) {
+        if (watchedType === ANNOUNCEMENT_TYPE.EPIDEMIC) {
+          form.setFieldsValue({ content: res.data.data.notice });
+        } else {
+          form.setFieldsValue({ content: res.data.data.summary });
+        }
+        messageApi.success('AI가 문서를 요약했습니다!');
+      }
     } catch (e: any) {
-      console.error('문서 요약 실패:', e);
-      messageApi.error(e.message || '문서 요약 중 오류가 발생했습니다.');
+      console.error('AI 문서 요약 실패:', e);
+      messageApi.error(e.message || 'AI 문서 요약 중 오류가 발생했습니다.');
+    } finally {
+      setAiLoading(false);
     }
   };
 
-  // 수정 제출
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: AnnouncementRequest) => {
     try {
-      const values = await form.validateFields();
       const payload = {
         type: values.type,
-        title: values.title,
+        title: values.title.trim(),
         content: values.content,
         attachmentUrl: values.attachmentUrl || '',
       };
-
-      const res = await instance.patch(`/announcements/${id}`, payload);
+      const res = await instance.put(`/announcements/${id}`, payload);
+      // LOG: 테스트용 로그
+      console.log('✨ 공지사항 수정:', res.data);
       if (res.data.success) {
         messageApi.success('공지사항이 수정되었습니다.');
         navigate(`/hq/notices/${id}`);
-      } else {
-        messageApi.error('공지사항 수정에 실패했습니다.');
       }
     } catch (e: any) {
       console.error('공지사항 수정 실패:', e);
@@ -127,10 +154,13 @@ export default function HqNoticeEditPage() {
     }
   };
 
-  // 뒤로가기 확인
+  const handleFormValuesChange = () => {
+    setIsEdited(true);
+  };
+
   const handleBack = () => {
     if (isEdited) {
-      Modal.confirm({
+      modal.confirm({
         title: '페이지를 나가시겠습니까?',
         content: '수정 중인 내용이 사라집니다.',
         okText: '나가기',
@@ -145,6 +175,7 @@ export default function HqNoticeEditPage() {
   return (
     <>
       {contextHolder}
+      {modalContextHolder}
       <Space size="large" align="baseline">
         <Button
           type="link"
@@ -162,6 +193,7 @@ export default function HqNoticeEditPage() {
         form={form}
         name="notice-edit"
         layout="vertical"
+        onValuesChange={handleFormValuesChange}
         onFinish={handleSubmit}
         autoComplete="off"
       >
@@ -174,14 +206,14 @@ export default function HqNoticeEditPage() {
           >
             <Select
               options={[
-                { value: 'NOTICE', label: '공지' },
+                { value: 'NOTICE', label: '안내' },
                 { value: 'EPIDEMIC', label: '감염병' },
                 { value: 'LAW', label: '법령' },
                 { value: 'NEW_PRODUCT', label: '신제품' },
               ]}
+              disabled
             />
           </Form.Item>
-
           <Form.Item
             name="title"
             label="제목"
@@ -199,22 +231,23 @@ export default function HqNoticeEditPage() {
         >
           <TiptapEditor
             value={watchedContent}
-            onChange={(val: string) => form.setFieldValue('content', val)}
+            onChange={(val: string) => form.setFieldsValue({ content: val })}
           />
         </Form.Item>
 
         <Flex wrap justify="space-between" gap={8}>
-          <Space wrap align="baseline">
+          <Space wrap align="center">
             <Form.Item name="attachmentUrl" noStyle>
               <Input type="hidden" />
             </Form.Item>
-
+            // TODO: 파일 용량 제한
             <Upload
-              accept=".pdf, .txt"
+              accept=".pdf,.txt"
               listType="text"
               fileList={fileList}
               beforeUpload={() => false}
               onChange={handleChange}
+              onRemove={handleRemove}
               maxCount={1}
             >
               {fileList.length >= 1 ? null : (
@@ -223,11 +256,11 @@ export default function HqNoticeEditPage() {
                 </Button>
               )}
             </Upload>
-
             <Button
               type="primary"
-              disabled={watchedType === 'NOTICE'}
+              disabled={!watchedType || watchedType === ANNOUNCEMENT_TYPE.NOTICE}
               onClick={handleAiSummarize}
+              loading={aiLoading}
             >
               AI 요약
             </Button>

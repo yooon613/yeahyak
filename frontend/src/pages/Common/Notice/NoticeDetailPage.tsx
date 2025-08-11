@@ -1,60 +1,39 @@
 import type { DescriptionsProps } from 'antd';
-import {
-  Button,
-  Card,
-  Descriptions,
-  Flex,
-  message,
-  Space,
-  Typography,
-} from 'antd';
+import { Button, Card, Descriptions, Flex, message, Space, Typography } from 'antd';
+import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuthStore } from '../../../stores/authStore';
-import { USER_ROLE } from '../../../types/profile.type';
-import type { Announcement } from '../../../types/announcement.type';
 import { instance } from '../../../api/api';
+import { useAuthStore } from '../../../stores/authStore';
+import type { Announcement } from '../../../types/announcement.type';
+import { USER_ROLE, type User } from '../../../types/profile.type';
 
 export default function NoticeDetailPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const { id } = useParams();
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
 
-  const [notice, setNotice] = useState<Announcement | null>(null);
-  const [loading, setLoading] = useState(true);
+  const user = useAuthStore((state) => state.user) as User;
+  const basePath = user.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
 
-  // 공지사항 단건 조회
+  const [notice, setNotice] = useState<Announcement>();
+  const [loading, setLoading] = useState(false);
+
   const fetchNotice = async () => {
     setLoading(true);
     try {
       const res = await instance.get(`/announcements/${id}`);
-      if (res.data.success && res.data.data) {
-        setNotice(res.data.data);
-      } else {
-        messageApi.error('공지사항 데이터를 불러올 수 없습니다.');
-        setNotice(null);
+      // LOG: 테스트용 로그
+      console.log('✨ 공지사항 상세 로딩:', res.data);
+      if (res.data.success) {
+        setNotice(res.data.data[0]);
       }
     } catch (e: any) {
-      console.error('공지사항 로딩 실패:', e);
-      messageApi.error(e.response?.data?.message || '공지사항 로딩 중 오류가 발생했습니다.');
-      setNotice(null);
+      console.error('공지사항 상세 로딩 실패:', e);
+      messageApi.error(e.message || '공지사항 로딩 중 오류가 발생했습니다.');
+      setNotice(undefined);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 삭제 처리
-  const handleDelete = async () => {
-    try {
-      if (window.confirm('정말 삭제하시겠습니까?')) {
-        await instance.delete(`/announcements/${id}`);
-        messageApi.success('공지사항이 삭제되었습니다.');
-        navigate('/hq/notices');
-      }
-    } catch (e: any) {
-      console.error('공지사항 삭제 실패:', e);
-      messageApi.error(e.response?.data?.message || '공지사항 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -62,8 +41,24 @@ export default function NoticeDetailPage() {
     fetchNotice();
   }, [id]);
 
-  if (loading) return <Typography.Text>로딩 중...</Typography.Text>;
   if (!notice) return <Typography.Text>해당 공지사항을 찾을 수 없습니다.</Typography.Text>;
+
+  const handleDelete = async () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const res = await instance.delete(`/announcements/${id}`);
+        // LOG: 테스트용 로그
+        console.log('✨ 공지사항 삭제:', res.data);
+        if (res.data.success) {
+          messageApi.success('공지사항이 삭제되었습니다.');
+          navigate(`${basePath}/notices`);
+        }
+      } catch (e: any) {
+        console.error('공지사항 삭제 실패:', e);
+        messageApi.error(e.message || '공지사항 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
 
   const descriptionsItems: DescriptionsProps['items'] = [
     {
@@ -72,9 +67,14 @@ export default function NoticeDetailPage() {
       children: notice.title,
     },
     {
+      key: 'type',
+      label: '구분',
+      children: notice.type,
+    },
+    {
       key: 'createdAt',
       label: '작성일',
-      children: new Date(notice.createdAt).toLocaleDateString(),
+      children: dayjs(notice.createdAt).format('YYYY. MM. DD. HH:mm'),
     },
   ];
 
@@ -100,35 +100,29 @@ export default function NoticeDetailPage() {
 
       <Descriptions
         bordered
-        column={2}
+        column={3}
         size="middle"
-        style={{ marginBottom: 24 }}
+        style={{ marginBottom: '24px' }}
         items={descriptionsItems}
       />
 
-      <Card style={{ marginBottom: 24, padding: 24 }}>
-        <Typography.Paragraph>
+      <Card style={{ marginBottom: '24px', padding: '24px' }}>
+        <Typography>
           <div dangerouslySetInnerHTML={{ __html: notice.content }} />
-        </Typography.Paragraph>
+        </Typography>
       </Card>
 
       <Flex wrap style={{ justifyContent: 'space-between' }}>
-        <Button
-          type="default"
-          onClick={() => {
-            const basePath = user?.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
-            navigate(`${basePath}/notices`);
-          }}
-        >
+        <Button type="default" onClick={() => navigate(`${basePath}/notices`)}>
           목록
         </Button>
 
-        {user?.role === USER_ROLE.ADMIN && (
+        {user.role === USER_ROLE.ADMIN && (
           <Space wrap>
             <Button type="text" danger onClick={handleDelete}>
               삭제
             </Button>
-            <Button type="primary" onClick={() => navigate(`/hq/notices/${id}/edit`)}>
+            <Button type="primary" onClick={() => navigate(`${basePath}/notices/${id}/edit`)}>
               수정
             </Button>
           </Space>
