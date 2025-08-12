@@ -35,6 +35,8 @@ export default function NoticeListPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  const [keyword, setKeyword] = useState('');
+
   const fetchNotices = async () => {
     setLoading(true);
     try {
@@ -43,6 +45,7 @@ export default function NoticeListPage() {
           type: activeTab,
           page: currentPage - 1,
           size: PAGE_SIZE,
+          keyword: keyword ? keyword : undefined,
         },
       });
 
@@ -51,8 +54,15 @@ export default function NoticeListPage() {
 
       if (res.data.success) {
         const { data, totalElements } = res.data;
-        setNotices(data);
-        setTotal(totalElements);
+        const filtered = (data as Announcement[]).filter(
+          (item) => item.type === activeTab
+        );
+
+        setNotices(filtered);
+        setTotal(keyword ? filtered.length : totalElements);
+      } else {
+        setNotices([]);
+        setTotal(0);
       }
     } catch (e: any) {
       console.error('공지사항 목록 로딩 실패:', e);
@@ -66,15 +76,19 @@ export default function NoticeListPage() {
 
   useEffect(() => {
     fetchNotices();
-  }, [activeTab, currentPage]);
+  }, [activeTab, currentPage, keyword]);
 
   const handleTabChange = (key: string) => {
     setActiveTab(key as AnnouncementType);
+    setKeyword('');
     setCurrentPage(1);
   };
 
   // TODO: 검색 기능 구현
-  const handleSearch = () => {};
+  const handleSearch = (value?: string) => {
+    setKeyword((value ?? '').trim());
+    setCurrentPage(1);
+  };
 
   const tableColumns: TableProps<Announcement>['columns'] = [
     {
@@ -166,7 +180,8 @@ export default function NoticeListPage() {
           <Input.Search
             allowClear
             placeholder="검색어 입력"
-            onChange={() => {}}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
             onSearch={handleSearch}
           />
         </Space.Compact>
