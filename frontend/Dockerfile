@@ -5,7 +5,8 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 # 필요 시 ENV/ARG로 VITE_* 값 세팅 가능
-RUN npm run build
+# RUN npm run build
+RUN npm run build:ci
 
 # 2) 런타임 단계
 FROM nginx:1.25-alpine
