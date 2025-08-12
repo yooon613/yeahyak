@@ -6,9 +6,10 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend.yml'
+  workflow_dispatch:          # 수동 실행 버튼 활성화
 
 env:
-  IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev   # dev 태그로 푸시
+  IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev
 
 jobs:
   build-push-deploy:
@@ -40,7 +41,7 @@ jobs:
             cd /opt/yeahyak
             docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
 
-            # compose에 우리 dev 이미지가 아직 안 박혀 있으면 1회 치환
+            # compose에 우리 dev 이미지가 없으면 1회 치환
             grep -q 'yeahyak-frontend:dev' docker-compose.yml || \
               sed -i 's#nginxdemos/hello#${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev#' docker-compose.yml
 
