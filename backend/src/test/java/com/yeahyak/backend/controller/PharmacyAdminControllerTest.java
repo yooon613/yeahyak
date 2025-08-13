@@ -113,7 +113,7 @@ class PharmacyAdminControllerTest {
         assertEquals(Status.ACTIVE, updated.getStatus());
 
         User updatedUser = userRepository.findById(user.getUserId()).orElseThrow();
-        assertEquals(UserRole.PHARMACIST, updatedUser.getUserRole());
+        assertEquals(UserRole.BRANCH, updatedUser.getUserRole());
     }
 
     @Test
@@ -175,7 +175,7 @@ class PharmacyAdminControllerTest {
         updateRequest.setPharmacyName("수정된약국명");
         updateRequest.setRepresentativeName("수정대표");
         updateRequest.setAddress("대구광역시 북구");
-        updateRequest.setPhoneNumber("010-9999-8888");
+        updateRequest.setContact("010-9999-8888");
 
         // 3. JSON 변환
         String json = objectMapper.writeValueAsString(updateRequest);

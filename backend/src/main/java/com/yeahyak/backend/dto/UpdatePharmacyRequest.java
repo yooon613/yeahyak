@@ -1,9 +1,11 @@
 package com.yeahyak.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 import lombok.Getter;
 
 @Getter
+@Data
 public class UpdatePharmacyRequest {
 
     @NotBlank

@@ -1,0 +1,138 @@
+name: deploy-backend (dev)
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}   # e.g. yeahyakacr.azurecr.io
+  IMAGE_REPO: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-backend
+  IMAGE_TAG: dev
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      # dev 브랜치 코드 빌드 (워크플로 파일은 main에 존재)
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Make gradlew executable
+        working-directory: backend
+        run: chmod +x gradlew || true
+
+      - name: Build jar (Gradle)
+        working-directory: backend
+        run: ./gradlew clean bootJar -x test --no-daemon --stacktrace --info
+
+      - name: List build artifacts
+        working-directory: backend
+        run: ls -alh build/libs
+
+      # Azure OIDC 로그인 후 ACR 로그인
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login (az acr login)
+        run: az acr login -n ${{ secrets.ACR_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push to ACR (:dev)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-push
+    steps:
+      - name: SSH into VM & update api service (compose)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            IMAGE="${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+
+            # 1) ACR 로그인 (admin user)
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login "${{ env.LOGIN_SERVER }}" -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+            # 2) compose에 백엔드 이미지 반영 후 api만 교체
+            cd /opt/yeahyak
+
+            # compose가 없다면 안전하게 재작성(프론트/AI 포함, 우리 표준 포트/바인딩)
+            if [ ! -f docker-compose.yml ]; then
+              cat > docker-compose.yml <<'YAML'
+            services:
+              frontend:
+                image: '${{ env.LOGIN_SERVER }}/yeahyak-frontend:dev'
+                container_name: yeahyak-frontend
+                ports: ['127.0.0.1:5173:80']
+                restart: always
+
+              api:
+                image: '${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}'
+                container_name: yeahyak-api
+                ports: ['127.0.0.1:8080:8080']
+                environment:
+                  - SPRING_PROFILES_ACTIVE=prod
+                restart: always
+
+              ai:
+                image: ealen/echo-server
+                container_name: yeahyak-ai
+                environment: ['PORT=8080']
+                ports: ['127.0.0.1:8082:8080']
+                restart: always
+            YAML
+            else
+              # 기존 파일이 있으면 api 이미지 줄만 교체
+              # (처음 echo-server였다면 그 부분도 교체)
+              sed -i "s#image:.*yeahyak-backend:.*#image: ${IMAGE}#g" docker-compose.yml || true
+              sed -i "s#ealen/echo-server#${IMAGE}#g" docker-compose.yml || true
+              # 바인딩을 실수로 외부 전체(0.0.0.0)로 연 경우 127.0.0.1로 교체
+              sed -i "s#- \"8080:8080\"#- \"127.0.0.1:8080:8080\"#g" docker-compose.yml || true
+            fi
+
+            docker compose pull api
+            docker compose up -d --no-deps api
+
+            # Caddy가 /api -> 127.0.0.1:8080 으로 가리키는지 한 번만 보정
+            if grep -q '127\.0\.0\.1:8081' /etc/caddy/Caddyfile; then
+              sudo sed -i 's/127\.0\.0\.1:8081/127.0.0.1:8080/' /etc/caddy/Caddyfile
+              sudo systemctl reload caddy
+            fi
+
+            # 3) 헬스체크(있을 때)
+            curl -fsS http://127.0.0.1:8080/actuator/health || curl -fsS http://127.0.0.1:8080/health || true
