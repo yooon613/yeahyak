@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-ai:dev
+  IMAGE_BASE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-ai
+  TAG: ${{ github.sha }}
 
 jobs:
   build-and-deploy:
@@ -27,7 +28,14 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Deploy on VM (SSH)
+      - name: Build & Push (dev + sha)
+        run: |
+          docker build --pull --no-cache -f ai/Dockerfile \
+            -t "$IMAGE_BASE:$TAG" -t "$IMAGE_BASE:dev" .
+          docker push "$IMAGE_BASE:$TAG"
+          docker push "$IMAGE_BASE:dev"
+
+      - name: Deploy on VM (use SHA tag)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VM_HOST }}
@@ -36,16 +44,12 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-ai:dev"
-            docker login "${{ secrets.ACR_LOGIN_SERVER }}" \
-              -u "${{ secrets.ACR_USERNAME }}" -p "${{ secrets.ACR_PASSWORD }}"
+            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-ai:${{ github.sha }}"
+            docker login "${{ secrets.ACR_LOGIN_SERVER }}" -u '${{ secrets.ACR_USERNAME }}' -p '${{ secrets.ACR_PASSWORD }}'
             docker pull "$IMAGE"
             docker rm -f yeahyak-ai 2>/dev/null || true
-
             docker run -d --name yeahyak-ai \
               -p 127.0.0.1:8082:8080 \
               --restart unless-stopped \
-              -e OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
-              -e DRUG_API_KEY='${{ secrets.DRUG_API_KEY }}' \
-              -e FRONT_ORIGIN='${{ secrets.FRONT_ORIGIN }}' \
+              --env-file /opt/yeahyak/ai.env \
               "$IMAGE"
