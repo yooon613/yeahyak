@@ -1,11 +1,11 @@
-name: ai-cd (dev)
+name: deploy-ai (dev)
 
 on:
   push:
-    branches: [ dev ]                  # ✅ dev에서만 실행
+    branches: [ dev ]
     paths:
-      - "ai/**"
-      - ".github/workflows/ai.yml"
+      - 'ai/**'
+      - '.github/workflows/ai.yml'
   workflow_dispatch:
 
 env:
@@ -14,27 +14,29 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout dev
         uses: actions/checkout@v4
+        with:
+          ref: dev
 
-      - name: Docker login (ACR)
+      - name: Login ACR
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build & Push :dev
+      - name: Build & Push (:dev)
         run: |
-          docker build -f ai/Dockerfile -t "$IMAGE" .
+          test -f ai/Dockerfile || { echo "ai/Dockerfile missing"; exit 1; }
+          docker build -f ai/Dockerfile -t "$IMAGE" ai
           docker push "$IMAGE"
 
       - name: Deploy on VM (SSH)
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.VM_HOST }}       # 프론트와 동일한 시크릿 키 이름 사용
+          host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script_stop: true
@@ -43,7 +45,6 @@ jobs:
             docker login ${{ secrets.ACR_LOGIN_SERVER }} -u '${{ secrets.ACR_USERNAME }}' -p '${{ secrets.ACR_PASSWORD }}'
             docker pull "$IMAGE"
             docker rm -f yeahyak-ai 2>/dev/null || true
-            # 컨테이너 8080 -> 호스트 8082 (Caddy가 /ai/* 을 127.0.0.1:8082 로 프록시)
             docker run -d --name yeahyak-ai \
               -p 127.0.0.1:8082:8080 \
               --restart unless-stopped \
