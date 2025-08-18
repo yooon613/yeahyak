@@ -27,12 +27,6 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build & Push (:dev)
-        run: |
-          test -f ai/Dockerfile || { echo "ai/Dockerfile missing"; exit 1; }
-          docker build -f ai/Dockerfile -t "$IMAGE" ai
-          docker push "$IMAGE"
-
       - name: Deploy on VM (SSH)
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -41,10 +35,17 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           script_stop: true
           script: |
-            set -e
-            docker login ${{ secrets.ACR_LOGIN_SERVER }} -u '${{ secrets.ACR_USERNAME }}' -p '${{ secrets.ACR_PASSWORD }}'
+            set -euo pipefail
+
+            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-ai:dev"
+            echo "Using IMAGE=${IMAGE}"  # 값 확인용(마스킹됨)
+
+            docker login "${{ secrets.ACR_LOGIN_SERVER }}" \
+              -u "${{ secrets.ACR_USERNAME }}" -p "${{ secrets.ACR_PASSWORD }}"
+
             docker pull "$IMAGE"
             docker rm -f yeahyak-ai 2>/dev/null || true
+
             docker run -d --name yeahyak-ai \
               -p 127.0.0.1:8082:8080 \
               --restart unless-stopped \
