@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-# 소스 전체 복사 (requirements.txt 포함)
+# 소스 복사 (requirements.txt 포함)
 COPY ai/ /app/
 
 # 패키지 설치 + gunicorn 보강 설치
