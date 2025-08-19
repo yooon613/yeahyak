@@ -29,14 +29,10 @@ jobs:
         
         run: |
           set -e
-          echo "PWD=$(pwd)"
-          ls -al
-          ls -al yeahyak || true
-          ls -al yeahyak/frontend || true
           
 
           # Dockerfile과 컨텍스트 경로를 명시
-          docker build -t "$IMAGE" -f yeahyak/frontend/Dockerfile yeahyak/frontend
+          docker build -t "$IMAGE" -f frontend/Dockerfile frontend
           docker push "$IMAGE"
 
       - name: Deploy to VM (frontend only)
