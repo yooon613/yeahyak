@@ -2,11 +2,11 @@ name: deploy-frontend (dev)
 
 on:
   push:
-    branches: [dev]                   # dev에서만 실행
+    branches: [dev]              # dev에서만 실행
     paths:
-      - 'frontend/**'                 # 실제 경로
+      - 'frontend/**'
       - '.github/workflows/frontend.yml'
-  workflow_dispatch:                  # 수동 실행 버튼
+  workflow_dispatch: {}          # 수동 실행 버튼
 
 env:
   IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev
@@ -15,7 +15,11 @@ jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (dev)
+        uses: actions/checkout@v4
+        with:
+          # 푸시 이벤트면 해당 ref, 수동 실행이면 dev 고정
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'dev' || github.ref }}
 
       - name: Login ACR
         uses: docker/login-action@v3
@@ -24,15 +28,10 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Sanity check (repo tree)
-        run: |
-          set -e
-          echo "PWD=$(pwd)"
-          test -f frontend/Dockerfile && echo "Dockerfile OK" || (ls -al && ls -al frontend; exit 1)
-
       - name: Build & Push image (dev)
         run: |
           set -e
+          # Dockerfile 경로와 컨텍스트를 명시 (frontend/Dockerfile 존재 가정)
           docker build -t "$IMAGE" -f frontend/Dockerfile frontend
           docker push "$IMAGE"
 
@@ -53,5 +52,5 @@ jobs:
               sed -i 's#nginxdemos/hello#${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev#' docker-compose.yml
 
             docker compose pull frontend || true
-            docker compose up -d --no-deps --force-recreate frontend
+            docker compose up -d --no-deps frontend
             docker image prune -f
