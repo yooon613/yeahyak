@@ -29,9 +29,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false); // 🔒 중복 클릭 방지
 
-  // 🔧 개발용: 로그인 없이 ADMIN 버튼 강제 노출
-  const DEV_FORCE_ADMIN = true;
-  const showAdminButtons = DEV_FORCE_ADMIN || user?.role === USER_ROLE.ADMIN;
+  // ✅ 공지사항 상세 페이지처럼 basePath 선언
+  const basePath = user?.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
 
   // TODO: API 연동 확인
   const fetchProduct = async () => {
@@ -75,7 +74,7 @@ export default function ProductDetailPage() {
           res.data.message ||
           '삭제되었습니다.';
         messageApi.success(msg);
-        navigate('/hq/products'); // ✅ 목록으로 이동
+        navigate(`${basePath}/products`); // ✅ 목록으로 이동 (basePath 사용)
       } else {
         messageApi.error(res.data?.message || '삭제에 실패했습니다.');
       }
@@ -118,7 +117,7 @@ export default function ProductDetailPage() {
           size="large"
           shape="circle"
           icon={<LeftOutlined />}
-          onClick={() => navigate('/hq/products')}
+          onClick={() => navigate(`${basePath}/products`)} // ✅ basePath 사용
         />
         <Typography.Title level={3} style={{ marginBottom: '24px' }}>
           제품 목록
@@ -164,9 +163,10 @@ export default function ProductDetailPage() {
 
             <Descriptions column={1} items={descriptionsItems} style={{ margin: '24px 0' }} />
 
-            {showAdminButtons ? (
+            {/* ✅ ADMIN일 때만 수정/삭제 버튼 표시 */}
+            {user?.role === USER_ROLE.ADMIN ? (
               <Space wrap>
-                <Button type="primary" onClick={() => navigate(`/hq/products/${id}/edit`)}>
+                <Button type="primary" onClick={() => navigate(`${basePath}/products/${id}/edit`)}>
                   수정
                 </Button>
                 <Button type="text" danger loading={deleting} onClick={handleDelete}>
