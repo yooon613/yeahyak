@@ -26,10 +26,17 @@ jobs:
 
       # ✅ 프런트 폴더에서 빌드 (경로 안전)
       - name: Build & Push image (dev)
-        working-directory: yeahyak/frontend
+        
         run: |
           set -e
-          docker build -t "$IMAGE" -f Dockerfile .
+          echo "PWD=$(pwd)"
+          ls -al
+          ls -al yeahyak || true
+          ls -al yeahyak/frontend || true
+          
+
+          # Dockerfile과 컨텍스트 경로를 명시
+          docker build -t "$IMAGE" -f yeahyak/frontend/Dockerfile yeahyak/frontend
           docker push "$IMAGE"
 
       - name: Deploy to VM (frontend only)
