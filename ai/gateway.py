@@ -30,7 +30,10 @@ from order_forecast.app import predict_order
 
 app = Flask(__name__)
 # CORS 설정: 프론트 주소 바꾸실 때 여기만 수정하시면 됩니다.
-CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
+# CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
+
+ALLOW_ORIGINS = [FRONT_ORIGIN, "http://localhost:5173"]
+CORS(app, origins=ALLOW_ORIGINS, supports_credentials=True)
 
 # QnA 에이전트 초기화
 chatbot = create_chatbot_agent()
