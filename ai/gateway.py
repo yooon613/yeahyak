@@ -1,6 +1,10 @@
+import os, json, chardet
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os, json, chardet
+
+# 환경 변수에서 FRONT_ORIGIN을 가져옵니다.
+# 환경 변수가 설정되지 않았을 경우 기본값으로 http://localhost:5173을 사용합니다.
+FRONT_ORIGIN = os.getenv("FRONT_ORIGIN", "http://localhost:5173")
 
 # --- Epidemic summary ---
 from epidemic_summary.app import (
@@ -29,9 +33,8 @@ from QnA_chatbot.chatbot_agent import create_chatbot_agent
 from order_forecast.app import predict_order
 
 app = Flask(__name__)
-# CORS 설정: 프론트 주소 바꾸실 때 여기만 수정하시면 됩니다.
-# CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
+# CORS 설정: 환경 변수와 로컬 개발 주소를 모두 허용합니다.
 ALLOW_ORIGINS = [FRONT_ORIGIN, "http://localhost:5173"]
 CORS(app, origins=ALLOW_ORIGINS, supports_credentials=True)
 
@@ -101,7 +104,7 @@ def faq_chat():
         result = faq_chatbot.invoke({"question": query})
         answer = result.get("answer", str(result))
         return wrap_success({
-            "reply":   answer,
+            "reply":    answer,
             "history": history + [
                 {"type": "human", "content": query},
                 {"type": "ai",    "content": answer}
@@ -134,7 +137,7 @@ def qna_chat():
         result = chatbot.invoke({"messages": messages})
         answer = result["messages"][-1].content
         return wrap_success({
-            "reply":   answer,
+            "reply":    answer,
             "history": history + [
                 {"type": "human", "content": query},
                 {"type": "ai",    "content": answer}
@@ -155,7 +158,7 @@ def order_forecast_route():
 
 # --- 헬스체크 ---
 @app.get("/health")
-def health(): 
+def health():    
     return "ok", 200
 
 if __name__ == '__main__':
@@ -163,5 +166,4 @@ if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
 
 # --- add: 기본 설정(파일 업로드 크기/타임아웃 대비) ---
-app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024   # 15MB 업로드 제한
-
+app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024    # 15MB 업로드 제한
