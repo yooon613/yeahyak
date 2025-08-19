@@ -34,6 +34,9 @@ export default function ProductListPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
+  // ✅ basePath 적용
+  const basePath = user?.role === USER_ROLE.BRANCH ? '/branch' : '/hq';
+
   const [activeTab, setActiveTab] = useState<ProductMainCategory>('전문의약품');
   const [activeSubCategory, setActiveSubCategory] = useState<ProductSubCategoryWithAll>('전체');
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -195,11 +198,12 @@ export default function ProductListPage() {
           제품 목록
         </Typography.Title>
 
-        {true && (
+        {/* ✅ ADMIN일 때만 제품 등록 버튼 노출, 경로는 basePath 사용 */}
+        {user?.role === USER_ROLE.ADMIN && (
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/hq/products/new')}
+            onClick={() => navigate(`${basePath}/products/new`)}
           >
             제품 등록
           </Button>
