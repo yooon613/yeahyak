@@ -2,11 +2,11 @@ name: deploy-frontend (dev)
 
 on:
   push:
-    branches: [dev]       # dev에서만 실행
+    branches: [dev]          # dev에서만 실행
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend.yml'
-  workflow_dispatch:      # 수동 실행 버튼 활성화
+  workflow_dispatch:          # 수동 실행 버튼 활성화
 
 env:
   IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev
@@ -45,10 +45,6 @@ jobs:
             grep -q 'yeahyak-frontend:dev' docker-compose.yml || \
               sed -i 's#nginxdemos/hello#${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev#' docker-compose.yml
 
-            # 기존 컨테이너를 강제로 중지하고 삭제합니다.
-            docker compose down frontend || true
-
-            # docker-compose로 새로운 컨테이너를 실행합니다.
             docker compose pull frontend || true
             docker compose up -d --no-deps frontend
             docker image prune -f
