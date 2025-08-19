@@ -2,11 +2,11 @@ name: deploy-frontend (dev)
 
 on:
   push:
-    branches: [dev]          # dev에서만 실행
+    branches: [dev]                   # dev에서만 실행
     paths:
-      - 'frontend/**'
+      - 'frontend/**'                 # 실제 경로
       - '.github/workflows/frontend.yml'
-  workflow_dispatch:          # 수동 실행 버튼 활성화
+  workflow_dispatch:                  # 수동 실행 버튼
 
 env:
   IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev
@@ -24,9 +24,16 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: Sanity check (repo tree)
+        run: |
+          set -e
+          echo "PWD=$(pwd)"
+          test -f frontend/Dockerfile && echo "Dockerfile OK" || (ls -al && ls -al frontend; exit 1)
+
       - name: Build & Push image (dev)
         run: |
-          docker build -t "$IMAGE" ./frontend
+          set -e
+          docker build -t "$IMAGE" -f frontend/Dockerfile frontend
           docker push "$IMAGE"
 
       - name: Deploy to VM (frontend only)
@@ -41,10 +48,10 @@ jobs:
             cd /opt/yeahyak
             docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
 
-            # compose에 우리 dev 이미지가 없으면 1회 치환
+            # compose에 dev 이미지가 없으면 1회 치환
             grep -q 'yeahyak-frontend:dev' docker-compose.yml || \
               sed -i 's#nginxdemos/hello#${{ secrets.ACR_LOGIN_SERVER }}/yeahyak-frontend:dev#' docker-compose.yml
 
             docker compose pull frontend || true
-            docker compose up -d --no-deps frontend
+            docker compose up -d --no-deps --force-recreate frontend
             docker image prune -f
